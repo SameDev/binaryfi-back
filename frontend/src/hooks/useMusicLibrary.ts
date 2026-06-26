@@ -15,8 +15,10 @@ export function useMusicLibrary(userId: string | null) {
   const [favorites, setFavorites] = useState<Song[]>([]);
   const [recent, setRecent] = useState<Song[]>([]);
   const [discovered, setDiscovered] = useState<Song[]>([]);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setReady(false);
     if (!userId) {
       setPreferences([]);
       setFavorites([]);
@@ -28,6 +30,7 @@ export function useMusicLibrary(userId: string | null) {
     setFavorites(readStorage<Song[]>(storageKeys.favorites(userId), []));
     setRecent(readStorage<Song[]>(storageKeys.recent(userId), []));
     setDiscovered(readStorage<Song[]>(storageKeys.discovered(userId), []));
+    setReady(true);
   }, [userId]);
 
   const savePreferences = useCallback(
@@ -82,6 +85,7 @@ export function useMusicLibrary(userId: string | null) {
   );
 
   return {
+    ready,
     preferences,
     favorites,
     recent,
