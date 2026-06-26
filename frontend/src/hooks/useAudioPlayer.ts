@@ -78,6 +78,10 @@ export function useAudioPlayer() {
     else audio.pause();
   }, [status]);
 
+  const pause = useCallback(() => {
+    audioRef.current?.pause();
+  }, []);
+
   const seek = useCallback(
     (time: number) => {
       const audio = audioRef.current;
@@ -111,6 +115,7 @@ export function useAudioPlayer() {
     duration,
     play,
     toggle,
+    pause,
     seek,
     close,
   };

@@ -193,6 +193,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
           currentTime={player.currentTime}
           duration={player.duration}
           onToggle={player.toggle}
+          onPause={player.pause}
           onSeek={player.seek}
           onClose={player.close}
         />
