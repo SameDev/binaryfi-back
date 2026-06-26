@@ -1,85 +1,59 @@
 import type { Song } from "../types";
 import { formatDuration } from "../utils/formatDuration";
+import { TrackCover } from "./TrackCover";
 
 type Props = {
   song: Song;
   isFavorite: boolean;
+  isCurrent: boolean;
   isPlaying: boolean;
   onPlay: (song: Song) => void;
   onToggleFavorite: (song: Song) => void;
 };
 
-function coverGradient(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) % 360;
-  }
-  const hue = Math.abs(hash);
-  return `linear-gradient(135deg, hsl(${hue}, 55%, 42%), hsl(${(hue + 40) % 360}, 60%, 22%))`;
-}
-
 export function MusicCard({
   song,
   isFavorite,
+  isCurrent,
   isPlaying,
   onPlay,
   onToggleFavorite,
 }: Props) {
+  const showPause = isCurrent && isPlaying;
+
   return (
-    <article className={isPlaying ? "music-card playing" : "music-card"}>
-      <div
-        className="music-cover"
-        style={{ background: coverGradient(song.track_id || song.track_name) }}
-      >
-        <span className="music-cover-initial">
-          {song.track_name.charAt(0).toUpperCase()}
-        </span>
+    <article className={isCurrent ? "music-card current" : "music-card"}>
+      <div className="card-cover-wrap">
+        <TrackCover song={song} />
         <button
           type="button"
           className="cover-play"
-          aria-label="Tocar"
+          aria-label={showPause ? "Pausar" : "Tocar"}
           onClick={() => onPlay(song)}
         >
-          {isPlaying ? "❚❚" : "▶"}
-        </button>
-      </div>
-
-      <div className="music-info">
-        <h3 className="music-title" title={song.track_name}>
-          {song.track_name}
-        </h3>
-        <p className="music-artist" title={song.artists}>
-          {song.artists}
-        </p>
-        <p className="music-album" title={song.album_name}>
-          {song.album_name}
-        </p>
-
-        <div className="music-meta">
-          <span className="genre-tag">{song.track_genre}</span>
-          <span className="meta-dot">•</span>
-          <span>★ {song.popularity}</span>
-          <span className="meta-dot">•</span>
-          <span>{formatDuration(song.duration_ms)}</span>
-        </div>
-      </div>
-
-      <div className="music-actions">
-        <button
-          type="button"
-          className="btn btn-play"
-          onClick={() => onPlay(song)}
-        >
-          {isPlaying ? "Tocando" : "Tocar"}
+          {showPause ? "❚❚" : "▶"}
         </button>
         <button
           type="button"
-          className={isFavorite ? "btn-fav active" : "btn-fav"}
-          aria-label="Favoritar"
+          className={isFavorite ? "card-fav active" : "card-fav"}
+          aria-label={isFavorite ? "Desfavoritar" : "Favoritar"}
           onClick={() => onToggleFavorite(song)}
         >
           {isFavorite ? "♥" : "♡"}
         </button>
+      </div>
+
+      <div className="card-info">
+        <h3 className="card-title" title={song.track_name}>
+          {song.track_name}
+        </h3>
+        <p className="card-artist" title={song.artists}>
+          {song.artists}
+        </p>
+        <div className="card-meta">
+          <span className="genre-tag">{song.track_genre}</span>
+          <span className="card-duration">{formatDuration(song.duration_ms)}</span>
+        </div>
       </div>
     </article>
   );

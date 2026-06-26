@@ -31,7 +31,7 @@ export function Sidebar({
   return (
     <aside className={open ? "sidebar open" : "sidebar"}>
       <div className="brand sidebar-brand">
-        <span className="brand-mark">◆</span>
+        <img className="brand-logo" src="/logo.png" alt="BinaryFi" />
         <span>BinaryFi</span>
       </div>
 

@@ -3,10 +3,12 @@ import type { MusicGenre, Song, User } from "../types";
 import { searchSongs } from "../api/binaryfiApi";
 import { uniqueSongs } from "../utils/uniqueSongs";
 import { useMusicLibrary } from "../hooks/useMusicLibrary";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { Sidebar, type SectionId } from "./Sidebar";
 import { Header } from "./Header";
 import { SearchSection } from "./SearchSection";
-import { MusicColumn } from "./MusicColumn";
+import { MusicSection } from "./MusicSection";
+import { AudioPlayer } from "./AudioPlayer";
 
 type Props = {
   user: User;
@@ -33,6 +35,8 @@ export function MainLayout({ user, library, onLogout }: Props) {
     isFavorite,
     addDiscovered,
   } = library;
+
+  const player = useAudioPlayer();
 
   const [active, setActive] = useState<SectionId>("search");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -79,7 +83,13 @@ export function MainLayout({ user, library, onLogout }: Props) {
       .slice(0, MAX_RECOMMENDATIONS);
   }, [discovered, preferences]);
 
-  const currentTrackId = recent[0]?.track_id ?? null;
+  const handlePlay = useCallback(
+    (song: Song) => {
+      playSong(song);
+      player.play(song);
+    },
+    [playSong, player]
+  );
 
   const handleNavigate = useCallback((section: SectionId) => {
     setActive(section);
@@ -90,12 +100,14 @@ export function MainLayout({ user, library, onLogout }: Props) {
     });
   }, []);
 
+  const currentTrackId = player.current?.song.track_id ?? null;
+
   const recommendationsEmpty = seedLoading
     ? "Carregando recomendações..."
-    : "Não encontramos recomendações para seus estilos ainda. Pesquise algumas músicas para melhorar suas recomendações.";
+    : "Não encontramos recomendações para seus estilos ainda.";
 
   return (
-    <div className="app-shell">
+    <div className={player.current ? "app-shell with-player" : "app-shell"}>
       <Sidebar
         active={active}
         favoritesCount={favorites.length}
@@ -119,55 +131,72 @@ export function MainLayout({ user, library, onLogout }: Props) {
           <div ref={sectionRefs.search}>
             <SearchSection
               currentTrackId={currentTrackId}
+              isPlaying={player.isPlaying}
               isFavorite={isFavorite}
-              onPlay={playSong}
+              onPlay={handlePlay}
               onToggleFavorite={toggleFavorite}
               onResults={addDiscovered}
             />
           </div>
 
-          <div className="columns">
+          <div className="sections">
             <div ref={sectionRefs.recommendations}>
-              <MusicColumn
+              <MusicSection
                 title="Recomendações"
                 icon="✧"
                 songs={recommendations}
                 emptyMessage={recommendationsEmpty}
                 currentTrackId={currentTrackId}
+                isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
-                onPlay={playSong}
+                onPlay={handlePlay}
                 onToggleFavorite={toggleFavorite}
               />
             </div>
 
             <div ref={sectionRefs.recent}>
-              <MusicColumn
+              <MusicSection
                 title="Últimas escutadas"
                 icon="↺"
                 songs={recent}
                 emptyMessage="Você não escutou nenhuma música ainda."
                 currentTrackId={currentTrackId}
+                isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
-                onPlay={playSong}
+                onPlay={handlePlay}
                 onToggleFavorite={toggleFavorite}
               />
             </div>
 
             <div ref={sectionRefs.favorites}>
-              <MusicColumn
+              <MusicSection
                 title="Minhas favoritas"
                 icon="♥"
                 songs={favorites}
                 emptyMessage="Você não favoritou nenhuma música ainda."
                 currentTrackId={currentTrackId}
+                isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
-                onPlay={playSong}
+                onPlay={handlePlay}
                 onToggleFavorite={toggleFavorite}
               />
             </div>
           </div>
         </main>
       </div>
+
+      {player.current && (
+        <AudioPlayer
+          current={player.current}
+          status={player.status}
+          isPlaying={player.isPlaying}
+          currentTime={player.currentTime}
+          duration={player.duration}
+          onToggle={player.toggle}
+          onSeek={player.seek}
+          onClose={player.close}
+        />
+      )}
     </div>
   );
 }

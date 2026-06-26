@@ -36,7 +36,7 @@ export function AuthScreen({ onRegister, onLogin }: Props) {
     <div className="auth-screen">
       <div className="auth-aside">
         <div className="brand brand--large">
-          <span className="brand-mark">◆</span>
+          <img className="brand-logo" src="/logo.png" alt="BinaryFi" />
           <span>BinaryFi</span>
         </div>
         <h1>Sua música encontrada na velocidade do log n.</h1>

@@ -7,6 +7,7 @@ import { BinaryStepsPanel } from "./BinaryStepsPanel";
 
 type Props = {
   currentTrackId: string | null;
+  isPlaying: boolean;
   isFavorite: (trackId: string) => boolean;
   onPlay: (song: Song) => void;
   onToggleFavorite: (song: Song) => void;
@@ -17,6 +18,7 @@ type ErrorKind = null | "connection" | "generic";
 
 export function SearchSection({
   currentTrackId,
+  isPlaying,
   isFavorite,
   onPlay,
   onToggleFavorite,
@@ -148,7 +150,8 @@ export function SearchSection({
                   key={song.track_id}
                   song={song}
                   isFavorite={isFavorite(song.track_id)}
-                  isPlaying={currentTrackId === song.track_id}
+                  isCurrent={currentTrackId === song.track_id}
+                  isPlaying={isPlaying}
                   onPlay={onPlay}
                   onToggleFavorite={onToggleFavorite}
                 />

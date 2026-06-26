@@ -41,7 +41,7 @@ export function PreferencesScreen({ userName, initial, onConfirm }: Props) {
     <div className="preferences-screen">
       <div className="preferences-card">
         <div className="brand">
-          <span className="brand-mark">◆</span>
+          <img className="brand-logo" src="/logo.png" alt="BinaryFi" />
           <span>BinaryFi</span>
         </div>
         <h1>Quais estilos de música você mais gosta, {userName}?</h1>

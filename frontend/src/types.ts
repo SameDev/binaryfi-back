@@ -66,3 +66,15 @@ export type User = {
   email: string;
   password: string;
 };
+
+export type TrackMetadata = {
+  previewUrl?: string;
+  artworkUrl?: string;
+  externalUrl?: string;
+  source: "itunes" | "spotify" | "none";
+};
+
+export type PlayerTrack = {
+  song: Song;
+  metadata: TrackMetadata;
+};
