@@ -67,51 +67,57 @@ export function SearchSection({
   const hasResults = response?.results && response.results.length > 0;
 
   return (
-    <section className="search-section" id="section-search">
+    <>
       <div className="search-hero">
         <h1 className="search-headline">O que você quer ouvir?</h1>
         <p className="search-subline">
           Busca binária real sobre o dataset do Spotify.
         </p>
+      </div>
 
-        <div className="search-bar">
-          <span className="search-icon">⌕</span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder={
-              by === "title" ? "Busque por título da música" : "Busque por artista"
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {query && (
+      <div className="search-sticky">
+        <div className="search-sticky-inner">
+          <div className="search-bar">
+            <span className="search-icon">⌕</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder={
+                by === "title"
+                  ? "Busque por título da música"
+                  : "Busque por artista"
+              }
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                type="button"
+                className="search-clear"
+                aria-label="Limpar"
+                onClick={() => setQuery("")}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="search-toggle">
             <button
               type="button"
-              className="search-clear"
-              aria-label="Limpar"
-              onClick={() => setQuery("")}
+              className={by === "title" ? "toggle-option active" : "toggle-option"}
+              onClick={() => setBy("title")}
             >
-              ✕
+              Por título
             </button>
-          )}
-        </div>
-
-        <div className="search-toggle">
-          <button
-            type="button"
-            className={by === "title" ? "toggle-option active" : "toggle-option"}
-            onClick={() => setBy("title")}
-          >
-            Por título
-          </button>
-          <button
-            type="button"
-            className={by === "artist" ? "toggle-option active" : "toggle-option"}
-            onClick={() => setBy("artist")}
-          >
-            Por artista
-          </button>
+            <button
+              type="button"
+              className={by === "artist" ? "toggle-option active" : "toggle-option"}
+              onClick={() => setBy("artist")}
+            >
+              Por artista
+            </button>
+          </div>
         </div>
       </div>
 
@@ -160,6 +166,6 @@ export function SearchSection({
           </>
         )}
       </div>
-    </section>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { Header } from "./Header";
 import { SearchSection } from "./SearchSection";
 import { MusicSection } from "./MusicSection";
 import { AudioPlayer } from "./AudioPlayer";
+import { NowPlayingPanel } from "./NowPlayingPanel";
 
 type Props = {
   user: User;
@@ -18,10 +19,34 @@ type Props = {
 
 const SEED_TERMS = ["a", "love", "you", "the", "baby", "night", "heart", "dance"];
 const MAX_RECOMMENDATIONS = 12;
+const PREFERENCE_WEIGHT = 2;
+const LISTENED_WEIGHT = 1;
 
-function matchesPreferences(song: Song, prefs: MusicGenre[]): boolean {
-  const genre = (song.track_genre || "").toLowerCase();
-  return prefs.some((p) => genre === p || genre.includes(p));
+function buildGenreWeights(
+  preferences: MusicGenre[],
+  recent: Song[]
+): Map<string, number> {
+  const weights = new Map<string, number>();
+  for (const genre of preferences) {
+    const key = genre.toLowerCase();
+    weights.set(key, (weights.get(key) ?? 0) + PREFERENCE_WEIGHT);
+  }
+  for (const song of recent) {
+    const key = (song.track_genre || "").toLowerCase();
+    if (!key) continue;
+    weights.set(key, (weights.get(key) ?? 0) + LISTENED_WEIGHT);
+  }
+  return weights;
+}
+
+function genreScore(genre: string, weights: Map<string, number>): number {
+  let total = 0;
+  for (const [key, weight] of weights) {
+    if (genre === key || genre.includes(key) || key.includes(genre)) {
+      total += weight;
+    }
+  }
+  return total;
 }
 
 export function MainLayout({ user, library, onLogout }: Props) {
@@ -40,11 +65,11 @@ export function MainLayout({ user, library, onLogout }: Props) {
 
   const [active, setActive] = useState<SectionId>("search");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
   const [seedLoading, setSeedLoading] = useState(false);
   const seeded = useRef(false);
 
   const sectionRefs = {
-    search: useRef<HTMLDivElement>(null),
     recommendations: useRef<HTMLDivElement>(null),
     recent: useRef<HTMLDivElement>(null),
     favorites: useRef<HTMLDivElement>(null),
@@ -77,16 +102,30 @@ export function MainLayout({ user, library, onLogout }: Props) {
   }, [addDiscovered]);
 
   const recommendations = useMemo(() => {
+    const weights = buildGenreWeights(preferences, recent);
+    if (weights.size === 0) return [];
+
+    const exclude = new Set(
+      [...recent, ...favorites].map((song) => song.track_id)
+    );
+
     return uniqueSongs(discovered)
-      .filter((song) => matchesPreferences(song, preferences))
-      .sort((a, b) => b.popularity - a.popularity)
-      .slice(0, MAX_RECOMMENDATIONS);
-  }, [discovered, preferences]);
+      .filter((song) => !exclude.has(song.track_id))
+      .map((song) => ({
+        song,
+        score: genreScore((song.track_genre || "").toLowerCase(), weights),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score || b.song.popularity - a.song.popularity)
+      .slice(0, MAX_RECOMMENDATIONS)
+      .map((entry) => entry.song);
+  }, [discovered, preferences, recent, favorites]);
 
   const handlePlay = useCallback(
     (song: Song) => {
       playSong(song);
       player.play(song);
+      setPanelOpen(true);
     },
     [playSong, player]
   );
@@ -94,6 +133,10 @@ export function MainLayout({ user, library, onLogout }: Props) {
   const handleNavigate = useCallback((section: SectionId) => {
     setActive(section);
     setSidebarOpen(false);
+    if (section === "search") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     sectionRefs[section].current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -104,10 +147,20 @@ export function MainLayout({ user, library, onLogout }: Props) {
 
   const recommendationsEmpty = seedLoading
     ? "Carregando recomendações..."
-    : "Não encontramos recomendações para seus estilos ainda.";
+    : "Escute músicas ou escolha estilos para receber recomendações personalizadas.";
+
+  const showPanel = Boolean(player.current) && panelOpen;
+
+  const shellClasses = [
+    "app-shell",
+    player.current ? "with-player" : "",
+    showPanel ? "with-panel" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className={player.current ? "app-shell with-player" : "app-shell"}>
+    <div className={shellClasses}>
       <Sidebar
         active={active}
         favoritesCount={favorites.length}
@@ -128,16 +181,14 @@ export function MainLayout({ user, library, onLogout }: Props) {
         />
 
         <main className="app-content">
-          <div ref={sectionRefs.search}>
-            <SearchSection
-              currentTrackId={currentTrackId}
-              isPlaying={player.isPlaying}
-              isFavorite={isFavorite}
-              onPlay={handlePlay}
-              onToggleFavorite={toggleFavorite}
-              onResults={addDiscovered}
-            />
-          </div>
+          <SearchSection
+            currentTrackId={currentTrackId}
+            isPlaying={player.isPlaying}
+            isFavorite={isFavorite}
+            onPlay={handlePlay}
+            onToggleFavorite={toggleFavorite}
+            onResults={addDiscovered}
+          />
 
           <div className="sections">
             <div ref={sectionRefs.recommendations}>
@@ -184,6 +235,14 @@ export function MainLayout({ user, library, onLogout }: Props) {
           </div>
         </main>
       </div>
+
+      {showPanel && player.current && (
+        <NowPlayingPanel
+          song={player.current.song}
+          metadata={player.current.metadata}
+          onClose={() => setPanelOpen(false)}
+        />
+      )}
 
       {player.current && (
         <AudioPlayer
