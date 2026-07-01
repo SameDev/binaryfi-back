@@ -1,4 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import {
   ApiOperation,
   ApiQuery,
@@ -27,14 +33,18 @@ export class SearchController {
     required: false,
     description: 'Campo de busca (padrão: title)',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 50 })
   @ApiResponse({ status: 200, type: SearchResult })
   binary(
     @Query('q') query: string,
     @Query('by') by: 'title' | 'artist' = 'title',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ) {
     if (!query) return { error: 'Missing query param "q"' };
     const field = by === 'artist' ? 'artist' : 'title';
-    return this.searchService.binarySearch(query, field);
+    return this.searchService.binarySearch(query, field, page, limit);
   }
 
   @Get('sequential')
@@ -51,13 +61,17 @@ export class SearchController {
     required: false,
     description: 'Campo de busca (padrão: title)',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 50 })
   @ApiResponse({ status: 200, type: SearchResult })
   sequential(
     @Query('q') query: string,
     @Query('by') by: 'title' | 'artist' = 'title',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ) {
     if (!query) return { error: 'Missing query param "q"' };
     const field = by === 'artist' ? 'artist' : 'title';
-    return this.searchService.sequentialSearch(query, field);
+    return this.searchService.sequentialSearch(query, field, page, limit);
   }
 }

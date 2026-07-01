@@ -18,7 +18,19 @@ export class SearchService {
     return by === 'title' ? song.track_name : song.artists;
   }
 
-  binarySearch(query: string, by: 'title' | 'artist'): SearchResult {
+  private paginate<T>(items: T[], page: number, limit: number): T[] {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    const start = (safePage - 1) * safeLimit;
+    return items.slice(start, start + safeLimit);
+  }
+
+  binarySearch(
+    query: string,
+    by: 'title' | 'artist',
+    page = 1,
+    limit = 50,
+  ): SearchResult {
     const t0 = performance.now();
     const arr = this.getArr(by);
     const q = query.toLowerCase();
@@ -75,7 +87,8 @@ export class SearchService {
       by,
       algorithm: 'binary',
       found: results.length > 0,
-      results: results.slice(0, 50),
+      results: this.paginate(results, page, limit),
+      total: results.length,
       stats: {
         comparisons,
         totalSongs: arr.length,
@@ -85,7 +98,12 @@ export class SearchService {
     };
   }
 
-  sequentialSearch(query: string, by: 'title' | 'artist'): SearchResult {
+  sequentialSearch(
+    query: string,
+    by: 'title' | 'artist',
+    page = 1,
+    limit = 50,
+  ): SearchResult {
     const t0 = performance.now();
     const arr = this.getArr(by);
     const q = query.toLowerCase();
@@ -104,7 +122,8 @@ export class SearchService {
       by,
       algorithm: 'sequential',
       found: results.length > 0,
-      results: results.slice(0, 50),
+      results: this.paginate(results, page, limit),
+      total: results.length,
       stats: {
         comparisons,
         totalSongs: arr.length,

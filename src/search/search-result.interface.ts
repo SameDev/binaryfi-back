@@ -57,6 +57,9 @@ export class SearchResult {
   @ApiProperty({ type: [Song] })
   results: Song[];
 
+  @ApiProperty({ example: 128, description: 'Total de faixas que casam com o prefixo' })
+  total: number;
+
   @ApiProperty({ type: SearchStats })
   stats: SearchStats;
 

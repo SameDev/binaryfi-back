@@ -9,6 +9,7 @@ const mockResult: SearchResult = {
   algorithm: 'binary',
   found: true,
   results: [],
+  total: 0,
   stats: { comparisons: 17, totalSongs: 114000, timeMs: 0.1 },
   steps: [],
 };
@@ -34,35 +35,35 @@ describe('SearchController', () => {
 
   describe('GET /search (binary)', () => {
     it('calls binarySearch with correct args', () => {
-      controller.binary('bohemian', 'title');
-      expect(searchService.binarySearch).toHaveBeenCalledWith('bohemian', 'title');
+      controller.binary('bohemian', 'title', 1, 50);
+      expect(searchService.binarySearch).toHaveBeenCalledWith('bohemian', 'title', 1, 50);
     });
 
     it('defaults by to title when not provided', () => {
-      controller.binary('test', undefined as any);
-      expect(searchService.binarySearch).toHaveBeenCalledWith('test', 'title');
+      controller.binary('test', undefined as any, 1, 50);
+      expect(searchService.binarySearch).toHaveBeenCalledWith('test', 'title', 1, 50);
     });
 
     it('returns error when query is missing', () => {
-      const result = controller.binary(undefined as any, 'title');
+      const result = controller.binary(undefined as any, 'title', 1, 50);
       expect(result).toEqual({ error: 'Missing query param "q"' });
       expect(searchService.binarySearch).not.toHaveBeenCalled();
     });
 
     it('passes artist field correctly', () => {
-      controller.binary('queen', 'artist');
-      expect(searchService.binarySearch).toHaveBeenCalledWith('queen', 'artist');
+      controller.binary('queen', 'artist', 1, 50);
+      expect(searchService.binarySearch).toHaveBeenCalledWith('queen', 'artist', 1, 50);
     });
   });
 
   describe('GET /search/sequential', () => {
     it('calls sequentialSearch with correct args', () => {
-      controller.sequential('bohemian', 'title');
-      expect(searchService.sequentialSearch).toHaveBeenCalledWith('bohemian', 'title');
+      controller.sequential('bohemian', 'title', 1, 50);
+      expect(searchService.sequentialSearch).toHaveBeenCalledWith('bohemian', 'title', 1, 50);
     });
 
     it('returns error when query is missing', () => {
-      const result = controller.sequential(undefined as any, 'title');
+      const result = controller.sequential(undefined as any, 'title', 1, 50);
       expect(result).toEqual({ error: 'Missing query param "q"' });
       expect(searchService.sequentialSearch).not.toHaveBeenCalled();
     });

@@ -21,4 +21,37 @@ export class Song {
 
   @ApiProperty({ example: 'rock' })
   track_genre: string;
+
+  // Atributos musicais (0..1, exceto tempo) usados nas recomendações.
+  @ApiProperty({ example: 0.676 })
+  danceability: number;
+
+  @ApiProperty({ example: 0.461 })
+  energy: number;
+
+  @ApiProperty({ example: 0.0322 })
+  acousticness: number;
+
+  @ApiProperty({ example: 0.0000101 })
+  instrumentalness: number;
+
+  @ApiProperty({ example: 0.715 })
+  valence: number;
+
+  @ApiProperty({ example: 87.917 })
+  tempo: number;
+
+  @ApiProperty({ example: false })
+  explicit: boolean;
 }
+
+// Vetor de atributos musicais normalizados para cálculo de similaridade.
+export type AudioFeatures = Pick<
+  Song,
+  | 'danceability'
+  | 'energy'
+  | 'acousticness'
+  | 'instrumentalness'
+  | 'valence'
+  | 'tempo'
+>;
