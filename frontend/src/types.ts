@@ -64,7 +64,11 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  password: string;
+  // Nunca guardamos a senha pura: apenas o hash e o salt.
+  passwordHash?: string;
+  salt?: string;
+  // Campo legado: contas criadas antes do hash. Migrado no primeiro login.
+  password?: string;
 };
 
 export type MetadataSource = "spotify" | "deezer" | "itunes" | "fallback";

@@ -6,8 +6,12 @@ type Mode = "register" | "login";
 type AuthResult = { ok: true; user: User } | { ok: false; error: string };
 
 type Props = {
-  onRegister: (name: string, email: string, password: string) => AuthResult;
-  onLogin: (email: string, password: string) => AuthResult;
+  onRegister: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<AuthResult>;
+  onLogin: (email: string, password: string) => Promise<AuthResult>;
 };
 
 export function AuthScreen({ onRegister, onLogin }: Props) {
@@ -16,15 +20,21 @@ export function AuthScreen({ onRegister, onLogin }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    const result =
-      mode === "register"
-        ? onRegister(name, email, password)
-        : onLogin(email, password);
-    if (!result.ok) setError(result.error);
+    setSubmitting(true);
+    try {
+      const result =
+        mode === "register"
+          ? await onRegister(name, email, password)
+          : await onLogin(email, password);
+      if (!result.ok) setError(result.error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const switchMode = (next: Mode) => {
@@ -99,8 +109,16 @@ export function AuthScreen({ onRegister, onLogin }: Props) {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="submit" className="btn btn-primary btn-block">
-            {mode === "register" ? "Criar minha conta" : "Entrar"}
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={submitting}
+          >
+            {submitting
+              ? "Processando..."
+              : mode === "register"
+                ? "Criar minha conta"
+                : "Entrar"}
           </button>
         </form>
 
