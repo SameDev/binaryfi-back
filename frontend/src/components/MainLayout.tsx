@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Song, User } from "../types";
 import { prefetchMetadata } from "../api/metadataApi";
 import { useMusicLibrary } from "../hooks/useMusicLibrary";
@@ -29,9 +29,15 @@ export function MainLayout({ user, library, onLogout }: Props) {
   const { recommendations, loading: recsLoading, refresh: refreshRecs } =
     useRecommendations(user.id, preferences, 24);
 
-  const [activeView, setActiveView] = useState<SectionId>("search");
+  const [active, setActive] = useState<SectionId>("search");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+
+  const sectionRefs = {
+    recommendations: useRef<HTMLDivElement>(null),
+    recent: useRef<HTMLDivElement>(null),
+    favorites: useRef<HTMLDivElement>(null),
+  };
 
   useEffect(() => {
     prefetchMetadata([...recommendations, ...recent, ...favorites]);
@@ -81,10 +87,30 @@ export function MainLayout({ user, library, onLogout }: Props) {
     [events, refreshRecs]
   );
 
-  const handleNavigate = useCallback((view: SectionId) => {
-    setActiveView(view);
+  const handleNavigate = useCallback((section: SectionId) => {
+    setActive(section);
     setSidebarOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (section === "search") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const target = sectionRefs[section].current;
+    if (!target) return;
+
+    // Desconta a altura do header e da busca fixa (quando ainda está fixada)
+    // para o título da seção não ficar escondido no topo.
+    let offset = 12;
+    const header = document.querySelector<HTMLElement>(".app-header");
+    if (header) offset += header.offsetHeight;
+    const sticky = document.querySelector<HTMLElement>(".search-sticky");
+    if (sticky && getComputedStyle(sticky).position === "sticky") {
+      offset += sticky.offsetHeight;
+    }
+
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: "smooth" });
   }, []);
 
   const currentTrackId = player.current?.song.track_id ?? null;
@@ -106,7 +132,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
   return (
     <div className={shellClasses}>
       <Sidebar
-        active={activeView}
+        active={active}
         favoritesCount={favorites.length}
         recentCount={recent.length}
         open={sidebarOpen}
@@ -125,24 +151,21 @@ export function MainLayout({ user, library, onLogout }: Props) {
         />
 
         <main className="app-content">
-          {activeView === "search" && (
-            <SearchSection
-              currentTrackId={currentTrackId}
-              isPlaying={player.isPlaying}
-              isFavorite={isFavorite}
-              onPlay={handlePlay}
-              onToggleFavorite={handleToggleFavorite}
-              onResults={handleSearchResults}
-              onSearch={handleSearchQuery}
-            />
-          )}
+          <SearchSection
+            currentTrackId={currentTrackId}
+            isPlaying={player.isPlaying}
+            isFavorite={isFavorite}
+            onPlay={handlePlay}
+            onToggleFavorite={handleToggleFavorite}
+            onResults={handleSearchResults}
+            onSearch={handleSearchQuery}
+          />
 
-          {activeView === "recommendations" && (
-            <div className="library-view">
+          <div className="sections">
+            <div className="section-anchor" ref={sectionRefs.recommendations}>
               <MusicSection
                 title="Recomendações"
                 icon="✧"
-                variant="grid"
                 songs={recommendations}
                 emptyMessage={recommendationsEmpty}
                 currentTrackId={currentTrackId}
@@ -152,14 +175,11 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
-          )}
 
-          {activeView === "recent" && (
-            <div className="library-view">
+            <div className="section-anchor" ref={sectionRefs.recent}>
               <MusicSection
                 title="Últimas escutadas"
                 icon="↺"
-                variant="grid"
                 songs={recent}
                 emptyMessage="Você não escutou nenhuma música ainda."
                 currentTrackId={currentTrackId}
@@ -169,14 +189,11 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
-          )}
 
-          {activeView === "favorites" && (
-            <div className="library-view">
+            <div className="section-anchor" ref={sectionRefs.favorites}>
               <MusicSection
-                title="Favoritas"
+                title="Minhas favoritas"
                 icon="♥"
-                variant="grid"
                 songs={favorites}
                 emptyMessage="Você não favoritou nenhuma música ainda."
                 currentTrackId={currentTrackId}
@@ -186,7 +203,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
-          )}
+          </div>
         </main>
       </div>
 
