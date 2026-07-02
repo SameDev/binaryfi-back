@@ -9,9 +9,7 @@ const MAX_BATCH = 80;
 
 type Resolver = (value: TrackMetadata) => void;
 
-// Pedidos aguardando o próximo flush.
 const pending = new Map<string, Resolver[]>();
-// Pedidos já enviados ao backend (evita duplicar).
 const inflight = new Map<string, Promise<TrackMetadata>>();
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -39,7 +37,6 @@ async function flush(): Promise<void> {
     pending.delete(id);
   }
 
-  // Sobraram pedidos além do MAX_BATCH? Reagenda.
   if (pending.size > 0) scheduleFlush();
 
   let results: TrackMetadata[] = [];
@@ -94,7 +91,6 @@ export async function getTrackMetadata(song: Song): Promise<TrackMetadata> {
   return request(song.track_id);
 }
 
-/** Pré-carrega metadados de várias faixas de uma vez (aproveita o cache). */
 export function prefetchMetadata(songs: Song[]): void {
   for (const song of songs) {
     if (!readMetadataCache(song.track_id)) void request(song.track_id);

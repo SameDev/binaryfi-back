@@ -2,10 +2,6 @@ import { useCallback, useMemo } from "react";
 import type { Song } from "../types";
 import { postEvent, type UserEventType } from "../api/eventsApi";
 
-/**
- * Registra as interações do usuário no backend para alimentar as recomendações.
- * Só envia quando há um usuário logado.
- */
 export function useUserEvents(userId: string | null) {
   const track = useCallback(
     (type: UserEventType, song?: Song, query?: string) => {

@@ -84,7 +84,6 @@ export class SongsService implements OnModuleInit {
       };
       songs.push(song);
 
-      // Uma faixa pode aparecer em vários gêneros; guardamos a primeira ocorrência.
       if (!this.byId.has(song.track_id)) {
         this.byId.set(song.track_id, song);
       }

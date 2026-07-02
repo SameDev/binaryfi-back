@@ -5,11 +5,6 @@ export type UserEvent = CreateEventDto & { createdAt: string };
 
 const MAX_EVENTS_PER_USER = 500;
 
-/**
- * Guarda o histórico de interações por usuário em memória.
- * Estrutura preparada para, no futuro, ser persistida (Prisma/SQLite) sem
- * mudar a interface pública consumida pelas recomendações.
- */
 @Injectable()
 export class EventsService {
   private byUser = new Map<string, UserEvent[]>();

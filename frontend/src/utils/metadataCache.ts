@@ -13,10 +13,6 @@ function isPositive(metadata: TrackMetadata): boolean {
   return Boolean(metadata.coverUrl) && metadata.source !== "fallback";
 }
 
-/**
- * Lê o cache respeitando TTL. Cache positivo (com capa) dura dias;
- * fallback sem capa expira rápido para tentar atualizar depois.
- */
 export function readMetadataCache(trackId: string): TrackMetadata | null {
   try {
     const raw = localStorage.getItem(PREFIX + trackId);

@@ -14,7 +14,6 @@ export type UserEventInput = {
   query?: string;
 };
 
-/** Envia o evento em modo "fire and forget" — não bloqueia a UI. */
 export function postEvent(event: UserEventInput): void {
   try {
     void fetch(`${BASE_URL}/events`, {

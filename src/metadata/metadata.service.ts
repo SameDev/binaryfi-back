@@ -30,7 +30,6 @@ export class MetadataService {
     );
   }
 
-  /** Resolve metadados de uma faixa, usando cache e coalescendo requisições. */
   async getOne(trackId: string): Promise<TrackMetadata> {
     const cached = this.cache.get(trackId);
     if (cached) return cached;
@@ -45,7 +44,6 @@ export class MetadataService {
     return promise;
   }
 
-  /** Resolve vários IDs de uma vez, com concorrência limitada. */
   async getMany(trackIds: string[]): Promise<TrackMetadata[]> {
     const unique = [...new Set(trackIds)];
     const out: TrackMetadata[] = [];
@@ -75,12 +73,10 @@ export class MetadataService {
         const found = await provider();
         if (found?.coverUrl) {
           const result: TrackMetadata = { ...base, ...found };
-          // Preserva o link externo do Spotify se o provedor não trouxe um.
           if (!result.externalUrl) result.externalUrl = base.externalUrl;
           this.cache.set(trackId, result, POSITIVE_TTL_MS);
           return result;
         }
-        // Se não achou capa mas veio preview, guardamos para o fallback.
         if (found?.previewUrl && !base.previewUrl) {
           base.previewUrl = found.previewUrl;
           base.source = found.source ?? base.source;
@@ -90,7 +86,6 @@ export class MetadataService {
       }
     }
 
-    // Nada encontrado: fallback com TTL curto para tentar novamente em breve.
     const fallback: TrackMetadata = { ...base, source: 'fallback' };
     this.cache.set(trackId, fallback, NEGATIVE_TTL_MS);
     return fallback;
@@ -155,7 +150,6 @@ export class MetadataService {
 
   private async fromItunes(song: Song): Promise<Partial<TrackMetadata> | null> {
     const artist = this.primaryArtist(song.artists);
-    // Usa artista + música + álbum (não só artista + música).
     const term = `${artist} ${song.track_name} ${song.album_name}`.trim();
     const url =
       `https://itunes.apple.com/search?term=${encodeURIComponent(term)}` +

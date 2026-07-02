@@ -1,8 +1,3 @@
-/**
- * Cache em memória com TTL por entrada.
- * Usado para metadados: cache positivo dura dias, cache negativo dura pouco,
- * evitando "gravar falha para sempre".
- */
 export class MemoryCache<T> {
   private store = new Map<string, { value: T; expiresAt: number }>();
 
@@ -19,7 +14,6 @@ export class MemoryCache<T> {
   }
 
   set(key: string, value: T, ttlMs: number): void {
-    // Descarte simples do mais antigo quando estoura o limite.
     if (this.store.size >= this.maxEntries) {
       const oldest = this.store.keys().next().value;
       if (oldest !== undefined) this.store.delete(oldest);

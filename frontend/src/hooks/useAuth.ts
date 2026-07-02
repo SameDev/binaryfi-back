@@ -14,7 +14,6 @@ function makeId(email: string): string {
   return email.trim().toLowerCase().replace(/[^a-z0-9]/g, "_");
 }
 
-// Remove a senha pura antes de persistir (defesa extra p/ contas legadas).
 function sanitize(user: User): User {
   const { password, ...safe } = user;
   void password;
@@ -94,7 +93,6 @@ export function useAuth() {
         const hash = await hashPassword(password, found.salt);
         if (hash === found.passwordHash) authenticated = found;
       } else if (found.password !== undefined) {
-        // Conta legada (senha pura): valida e migra para hash + salt.
         if (found.password === password) {
           const salt = makeSalt();
           const passwordHash = await hashPassword(password, salt);

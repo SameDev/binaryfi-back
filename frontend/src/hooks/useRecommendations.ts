@@ -4,11 +4,6 @@ import { fetchRecommendations } from "../api/recommendationsApi";
 
 const REFRESH_DEBOUNCE = 1500;
 
-/**
- * Recomendações reais vindas do backend, baseadas nos gêneros preferidos
- * e nas interações do usuário. `refresh()` reatualiza (com debounce) quando
- * o usuário toca/favorita/pesquisa.
- */
 export function useRecommendations(
   userId: string | null,
   genres: string[],

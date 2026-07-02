@@ -1,10 +1,5 @@
-/**
- * Hash de senha no cliente com SHA-256 + salt aleatório.
- *
- * Isto evita guardar a senha pura no localStorage. NÃO substitui uma
- * autenticação real: o próximo passo (documentado no README) é mover o
- * cadastro/login para o backend com Argon2 + JWT.
- */
+// Hash no cliente (SHA-256 + salt) só para não guardar a senha pura no
+// localStorage. Não é autenticação real: ver "próximos passos" no README.
 
 function toHex(buffer: ArrayBuffer): string {
   return [...new Uint8Array(buffer)]

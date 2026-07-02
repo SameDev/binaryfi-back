@@ -5,7 +5,6 @@ import { AudioFeatures, Song } from '../songs/song.interface';
 
 type Centroid = AudioFeatures | null;
 
-// Pesos de cada componente da pontuação.
 const W_GENRE = 1.6;
 const W_FEATURES = 1.4;
 const W_ARTIST = 1.0;
@@ -86,7 +85,6 @@ export class RecommendationsService {
         (artistWeights.get(this.primaryArtist(song.artists)) ?? 0) / maxArtist;
       const pop = song.popularity / 100;
 
-      // Exploração: ruído + bônus para gêneros fora das preferências (descoberta).
       const known = genreWeights.has(song.track_genre.toLowerCase());
       const exploration = Math.random() * (known ? 0.4 : 1);
 
@@ -126,7 +124,6 @@ export class RecommendationsService {
     for (const s of played) add(s.track_genre, 1);
     for (const s of favorited) add(s.track_genre, 2);
 
-    // Buscas que mencionam o nome de um gênero reforçam a afinidade.
     if (searchTerms.length) {
       for (const { genre } of this.songs.getGenres()) {
         if (searchTerms.some((term) => term.includes(genre))) add(genre, 0.5);
@@ -186,7 +183,6 @@ export class RecommendationsService {
     };
   }
 
-  /** Similaridade 0..1 entre a faixa e o centroide (tempo normalizado por 250). */
   private featureSimilarity(song: Song, c: AudioFeatures): number {
     const d =
       (song.danceability - c.danceability) ** 2 +
@@ -221,7 +217,6 @@ export class RecommendationsService {
       ...preferred.map((g) => g.toLowerCase()),
     ]);
 
-    // Sem sinal nenhum: usa gêneros aleatórios para um cold start decente.
     if (genres.size === 0) {
       const all = this.songs.getGenres();
       for (const g of this.sample(all, 4)) genres.add(g.genre);
@@ -234,7 +229,6 @@ export class RecommendationsService {
       }
     }
 
-    // Exploração: amostra global de faixas para não ficar preso nos gêneros.
     for (const song of this.sample(this.songs.getAll(), RANDOM_EXPLORE)) {
       if (!skipped.has(song.track_id)) pool.set(song.track_id, song);
     }
@@ -242,7 +236,6 @@ export class RecommendationsService {
     return [...pool.values()];
   }
 
-  /** Diversifica limitando faixas por artista antes de cortar no limite. */
   private diversify(
     scored: Array<{ song: Song; score: number }>,
     limit: number,
@@ -264,7 +257,6 @@ export class RecommendationsService {
     return artists.split(';')[0].trim().toLowerCase();
   }
 
-  /** Amostragem aleatória sem repetição (reservoir simples). */
   private sample<T>(arr: T[], n: number): T[] {
     if (arr.length <= n) return arr;
     const result = arr.slice(0, n);

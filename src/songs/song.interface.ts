@@ -22,7 +22,6 @@ export class Song {
   @ApiProperty({ example: 'rock' })
   track_genre: string;
 
-  // Atributos musicais (0..1, exceto tempo) usados nas recomendações.
   @ApiProperty({ example: 0.676 })
   danceability: number;
 
@@ -45,7 +44,6 @@ export class Song {
   explicit: boolean;
 }
 
-// Vetor de atributos musicais normalizados para cálculo de similaridade.
 export type AudioFeatures = Pick<
   Song,
   | 'danceability'
