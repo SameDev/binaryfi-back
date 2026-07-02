@@ -39,14 +39,12 @@ export function MainLayout({ user, library, onLogout }: Props) {
     favorites: useRef<HTMLDivElement>(null),
   };
 
-  // Pré-carrega as capas das listas visíveis em lote (uma requisição só).
   useEffect(() => {
     prefetchMetadata([...recommendations, ...recent, ...favorites]);
   }, [recommendations, recent, favorites]);
 
   const handlePlay = useCallback(
     (song: Song) => {
-      // Heurística de "skip": trocar de música muito cedo conta como pulo.
       const prev = player.current;
       if (
         prev &&
@@ -151,7 +149,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
           />
 
           <div className="sections">
-            <div ref={sectionRefs.recommendations}>
+            <div className="section-anchor" ref={sectionRefs.recommendations}>
               <MusicSection
                 title="Recomendações"
                 icon="✧"
@@ -165,7 +163,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
               />
             </div>
 
-            <div ref={sectionRefs.recent}>
+            <div className="section-anchor" ref={sectionRefs.recent}>
               <MusicSection
                 title="Últimas escutadas"
                 icon="↺"
@@ -179,7 +177,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
               />
             </div>
 
-            <div ref={sectionRefs.favorites}>
+            <div className="section-anchor" ref={sectionRefs.favorites}>
               <MusicSection
                 title="Minhas favoritas"
                 icon="♥"
@@ -212,7 +210,6 @@ export function MainLayout({ user, library, onLogout }: Props) {
           currentTime={player.currentTime}
           duration={player.duration}
           onToggle={player.toggle}
-          onPause={player.pause}
           onSeek={player.seek}
           onClose={player.close}
         />

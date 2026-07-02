@@ -51,7 +51,7 @@ export function Sidebar({
               onClick={() => onNavigate(item.id)}
             >
               <span className="nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="nav-label">{item.label}</span>
               {badge > 0 && <span className="nav-badge">{badge}</span>}
             </button>
           );
@@ -60,7 +60,7 @@ export function Sidebar({
 
       <button type="button" className="nav-item logout" onClick={onLogout}>
         <span className="nav-icon">⏻</span>
-        <span>Sair</span>
+        <span className="nav-label">Sair</span>
       </button>
     </aside>
   );
