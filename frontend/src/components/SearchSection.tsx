@@ -12,6 +12,7 @@ type Props = {
   onPlay: (song: Song) => void;
   onToggleFavorite: (song: Song) => void;
   onResults: (songs: Song[]) => void;
+  onSearch: (query: string) => void;
 };
 
 type ErrorKind = null | "connection" | "generic";
@@ -23,6 +24,7 @@ export function SearchSection({
   onPlay,
   onToggleFavorite,
   onResults,
+  onSearch,
 }: Props) {
   const [query, setQuery] = useState("");
   const [by, setBy] = useState<SearchBy>("title");
@@ -51,6 +53,7 @@ export function SearchSection({
           if (requestId.current !== id) return;
           setResponse(data);
           setLoading(false);
+          onSearch(term);
           if (data.results?.length) onResults(data.results);
         })
         .catch((err) => {
@@ -62,7 +65,7 @@ export function SearchSection({
     }, 300);
 
     return () => window.clearTimeout(handle);
-  }, [query, by, onResults]);
+  }, [query, by, onResults, onSearch]);
 
   const hasResults = response?.results && response.results.length > 0;
 
@@ -148,8 +151,12 @@ export function SearchSection({
 
         {!loading && !error && response && hasResults && (
           <>
-            <SearchStats algorithm={response.algorithm} stats={response.stats} />
-            <BinaryStepsPanel steps={response.steps} />
+            <SearchStats
+              algorithm={response.algorithm}
+              stats={response.stats}
+              by={response.by}
+            />
+            <BinaryStepsPanel steps={response.steps} by={response.by} />
             <div className="results-grid">
               {response.results.map((song) => (
                 <MusicCard

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MusicGenre, Song, User } from "../types";
-import { searchSongs } from "../api/binaryfiApi";
-import { uniqueSongs } from "../utils/uniqueSongs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Song, User } from "../types";
+import { prefetchMetadata } from "../api/metadataApi";
 import { useMusicLibrary } from "../hooks/useMusicLibrary";
 import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { useRecommendations } from "../hooks/useRecommendations";
+import { useUserEvents } from "../hooks/useUserEvents";
 import { Sidebar, type SectionId } from "./Sidebar";
 import { Header } from "./Header";
 import { SearchSection } from "./SearchSection";
@@ -17,57 +18,20 @@ type Props = {
   onLogout: () => void;
 };
 
-const SEED_TERMS = ["a", "love", "you", "the", "baby", "night", "heart", "dance"];
-const MAX_RECOMMENDATIONS = 12;
-const PREFERENCE_WEIGHT = 2;
-const LISTENED_WEIGHT = 1;
-
-function buildGenreWeights(
-  preferences: MusicGenre[],
-  recent: Song[]
-): Map<string, number> {
-  const weights = new Map<string, number>();
-  for (const genre of preferences) {
-    const key = genre.toLowerCase();
-    weights.set(key, (weights.get(key) ?? 0) + PREFERENCE_WEIGHT);
-  }
-  for (const song of recent) {
-    const key = (song.track_genre || "").toLowerCase();
-    if (!key) continue;
-    weights.set(key, (weights.get(key) ?? 0) + LISTENED_WEIGHT);
-  }
-  return weights;
-}
-
-function genreScore(genre: string, weights: Map<string, number>): number {
-  let total = 0;
-  for (const [key, weight] of weights) {
-    if (genre === key || genre.includes(key) || key.includes(genre)) {
-      total += weight;
-    }
-  }
-  return total;
-}
+const SKIP_THRESHOLD_SECONDS = 10;
 
 export function MainLayout({ user, library, onLogout }: Props) {
-  const {
-    preferences,
-    favorites,
-    recent,
-    discovered,
-    playSong,
-    toggleFavorite,
-    isFavorite,
-    addDiscovered,
-  } = library;
+  const { preferences, favorites, recent, playSong, toggleFavorite, isFavorite } =
+    library;
 
   const player = useAudioPlayer();
+  const events = useUserEvents(user.id);
+  const { recommendations, loading: recsLoading, refresh: refreshRecs } =
+    useRecommendations(user.id, preferences, 24);
 
   const [active, setActive] = useState<SectionId>("search");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
-  const [seedLoading, setSeedLoading] = useState(false);
-  const seeded = useRef(false);
 
   const sectionRefs = {
     recommendations: useRef<HTMLDivElement>(null),
@@ -75,59 +39,54 @@ export function MainLayout({ user, library, onLogout }: Props) {
     favorites: useRef<HTMLDivElement>(null),
   };
 
+  // Pré-carrega as capas das listas visíveis em lote (uma requisição só).
   useEffect(() => {
-    if (seeded.current) return;
-    seeded.current = true;
-    let cancelled = false;
-    setSeedLoading(true);
-
-    Promise.allSettled(SEED_TERMS.map((term) => searchSongs(term, "title")))
-      .then((settled) => {
-        if (cancelled) return;
-        const songs = settled
-          .filter(
-            (s): s is PromiseFulfilledResult<Awaited<ReturnType<typeof searchSongs>>> =>
-              s.status === "fulfilled"
-          )
-          .flatMap((s) => s.value.results ?? []);
-        addDiscovered(uniqueSongs(songs));
-      })
-      .finally(() => {
-        if (!cancelled) setSeedLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [addDiscovered]);
-
-  const recommendations = useMemo(() => {
-    const weights = buildGenreWeights(preferences, recent);
-    if (weights.size === 0) return [];
-
-    const exclude = new Set(
-      [...recent, ...favorites].map((song) => song.track_id)
-    );
-
-    return uniqueSongs(discovered)
-      .filter((song) => !exclude.has(song.track_id))
-      .map((song) => ({
-        song,
-        score: genreScore((song.track_genre || "").toLowerCase(), weights),
-      }))
-      .filter((entry) => entry.score > 0)
-      .sort((a, b) => b.score - a.score || b.song.popularity - a.song.popularity)
-      .slice(0, MAX_RECOMMENDATIONS)
-      .map((entry) => entry.song);
-  }, [discovered, preferences, recent, favorites]);
+    prefetchMetadata([...recommendations, ...recent, ...favorites]);
+  }, [recommendations, recent, favorites]);
 
   const handlePlay = useCallback(
     (song: Song) => {
+      // Heurística de "skip": trocar de música muito cedo conta como pulo.
+      const prev = player.current;
+      if (
+        prev &&
+        prev.song.track_id !== song.track_id &&
+        player.isPlaying &&
+        player.currentTime < SKIP_THRESHOLD_SECONDS
+      ) {
+        events.skip(prev.song);
+      }
+
       playSong(song);
       player.play(song);
+      events.play(song);
+      refreshRecs();
       setPanelOpen(true);
     },
-    [playSong, player]
+    [playSong, player, events, refreshRecs]
+  );
+
+  const handleToggleFavorite = useCallback(
+    (song: Song) => {
+      const wasFavorite = isFavorite(song.track_id);
+      toggleFavorite(song);
+      if (wasFavorite) events.unfavorite(song);
+      else events.favorite(song);
+      refreshRecs();
+    },
+    [isFavorite, toggleFavorite, events, refreshRecs]
+  );
+
+  const handleSearchResults = useCallback((songs: Song[]) => {
+    prefetchMetadata(songs);
+  }, []);
+
+  const handleSearchQuery = useCallback(
+    (query: string) => {
+      events.search(query);
+      refreshRecs();
+    },
+    [events, refreshRecs]
   );
 
   const handleNavigate = useCallback((section: SectionId) => {
@@ -145,9 +104,9 @@ export function MainLayout({ user, library, onLogout }: Props) {
 
   const currentTrackId = player.current?.song.track_id ?? null;
 
-  const recommendationsEmpty = seedLoading
+  const recommendationsEmpty = recsLoading
     ? "Carregando recomendações..."
-    : "Escute músicas ou escolha estilos para receber recomendações personalizadas.";
+    : "Escolha estilos ou escute músicas para receber recomendações personalizadas.";
 
   const showPanel = Boolean(player.current) && panelOpen;
 
@@ -186,8 +145,9 @@ export function MainLayout({ user, library, onLogout }: Props) {
             isPlaying={player.isPlaying}
             isFavorite={isFavorite}
             onPlay={handlePlay}
-            onToggleFavorite={toggleFavorite}
-            onResults={addDiscovered}
+            onToggleFavorite={handleToggleFavorite}
+            onResults={handleSearchResults}
+            onSearch={handleSearchQuery}
           />
 
           <div className="sections">
@@ -201,7 +161,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
                 onPlay={handlePlay}
-                onToggleFavorite={toggleFavorite}
+                onToggleFavorite={handleToggleFavorite}
               />
             </div>
 
@@ -215,7 +175,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
                 onPlay={handlePlay}
-                onToggleFavorite={toggleFavorite}
+                onToggleFavorite={handleToggleFavorite}
               />
             </div>
 
@@ -229,7 +189,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 isPlaying={player.isPlaying}
                 isFavorite={isFavorite}
                 onPlay={handlePlay}
-                onToggleFavorite={toggleFavorite}
+                onToggleFavorite={handleToggleFavorite}
               />
             </div>
           </div>
