@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -6,12 +6,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS: em produção, restringe às origens de CORS_ORIGIN (lista separada por vírgula).
   const corsOrigin = process.env.CORS_ORIGIN;
   if (process.env.NODE_ENV === 'production' && corsOrigin) {
-    app.enableCors({
-      origin: corsOrigin.split(',').map((o) => o.trim()),
-    });
+    app.enableCors({ origin: corsOrigin.split(',').map((o) => o.trim()) });
   } else {
     app.enableCors();
   }
@@ -38,6 +35,20 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  new Logger('Bootstrap').log(`BinaryFi API rodando em http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((err: NodeJS.ErrnoException) => {
+  const logger = new Logger('Bootstrap');
+  if (err.code === 'EADDRINUSE') {
+    const port = process.env.PORT || 3000;
+    logger.error(
+      `A porta ${port} já está em uso. Feche o processo que a ocupa ou rode em outra porta (ex.: PORT=3001). Veja o README.`,
+    );
+  } else {
+    logger.error(err);
+  }
+  process.exit(1);
+});

@@ -50,9 +50,37 @@ Sobe em `http://localhost:5173` (padrão do Vite).
 | Variável | Descrição |
 |---|---|
 | `VITE_API_URL` | URL do backend. |
-| `VITE_YOUTUBE_API_KEY` | Opcional. Toca a música completa embutida via YouTube. |
 
 > Nunca comite tokens reais. Os arquivos `.env` estão no `.gitignore`; use os `.env.example`.
+
+### Trocar a porta / porta 3000 ocupada
+
+O backend usa `process.env.PORT` (padrão `3000`). Se aparecer `EADDRINUSE: address already in use :::3000`, outro processo está usando a porta.
+
+Descobrir e encerrar o processo (Windows):
+
+```powershell
+netstat -ano | findstr :3000
+taskkill /PID NUMERO_DO_PID /F
+```
+
+Rodar em outra porta:
+
+```powershell
+# PowerShell
+$env:PORT=3001
+npm run start:dev
+```
+
+```cmd
+:: CMD
+set PORT=3001 && npm run start:dev
+```
+
+```bash
+# Linux/Mac
+PORT=3001 npm run start:dev
+```
 
 ### Configurar a Spotify API (opcional)
 
