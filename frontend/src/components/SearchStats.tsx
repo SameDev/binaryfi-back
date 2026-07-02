@@ -1,11 +1,17 @@
-import type { SearchStats as Stats } from "../types";
+import type { SearchBy, SearchStats as Stats } from "../types";
 
 type Props = {
   algorithm: string;
   stats: Stats;
+  by: SearchBy;
 };
 
-export function SearchStats({ algorithm, stats }: Props) {
+const FIELD_LABELS: Record<SearchBy, string> = {
+  title: "título",
+  artist: "artista",
+};
+
+export function SearchStats({ algorithm, stats, by }: Props) {
   return (
     <div className="search-stats">
       <span className="stats-badge">Busca Binária ativa</span>
@@ -13,6 +19,10 @@ export function SearchStats({ algorithm, stats }: Props) {
         <div className="stat">
           <span className="stat-label">Algoritmo</span>
           <span className="stat-value">{algorithm}</span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Campo ordenado</span>
+          <span className="stat-value">{FIELD_LABELS[by]}</span>
         </div>
         <div className="stat">
           <span className="stat-label">Comparações</span>

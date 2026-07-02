@@ -1,8 +1,14 @@
 import { useState } from "react";
-import type { SearchStep } from "../types";
+import type { SearchBy, SearchStep } from "../types";
 
 type Props = {
   steps: SearchStep[];
+  by: SearchBy;
+};
+
+const FIELD_LABELS: Record<SearchBy, string> = {
+  title: "título da música (track_name)",
+  artist: "artista (artists)",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -12,7 +18,7 @@ const ACTION_LABELS: Record<string, string> = {
   not_found: "✕ fim",
 };
 
-export function BinaryStepsPanel({ steps }: Props) {
+export function BinaryStepsPanel({ steps, by }: Props) {
   const [open, setOpen] = useState(false);
 
   if (!steps.length) return null;
@@ -30,7 +36,15 @@ export function BinaryStepsPanel({ steps }: Props) {
       </button>
 
       {open && (
-        <div className="steps-table" role="table">
+        <>
+          <p className="steps-explain">
+            <strong>Busca Binária:</strong> é o método tradicional de busca
+            binária, adequado para encontrar um único elemento em um array
+            ordenado. Ela divide repetidamente o intervalo de busca pela metade
+            até encontrar o item desejado ou concluir que ele não existe. O array
+            é ordenado e pesquisado pelo campo <em>{FIELD_LABELS[by]}</em>.
+          </p>
+          <div className="steps-table" role="table">
           <div className="steps-row steps-head" role="row">
             <span>#</span>
             <span>low</span>
@@ -58,7 +72,8 @@ export function BinaryStepsPanel({ steps }: Props) {
               Mostrando os primeiros 8 de {steps.length} passos.
             </p>
           )}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
