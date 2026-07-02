@@ -88,11 +88,3 @@ export type PlayerTrack = {
   song: Song;
   metadata: TrackMetadata;
 };
-
-export type YouTubeVideo = {
-  videoId: string;
-  title: string;
-  channelTitle: string;
-  thumbnailUrl?: string;
-  url: string;
-};
