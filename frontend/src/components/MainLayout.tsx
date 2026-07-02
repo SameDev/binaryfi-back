@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Song, User } from "../types";
 import { prefetchMetadata } from "../api/metadataApi";
 import { useMusicLibrary } from "../hooks/useMusicLibrary";
@@ -29,15 +29,9 @@ export function MainLayout({ user, library, onLogout }: Props) {
   const { recommendations, loading: recsLoading, refresh: refreshRecs } =
     useRecommendations(user.id, preferences, 24);
 
-  const [active, setActive] = useState<SectionId>("search");
+  const [activeView, setActiveView] = useState<SectionId>("search");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
-
-  const sectionRefs = {
-    recommendations: useRef<HTMLDivElement>(null),
-    recent: useRef<HTMLDivElement>(null),
-    favorites: useRef<HTMLDivElement>(null),
-  };
 
   useEffect(() => {
     prefetchMetadata([...recommendations, ...recent, ...favorites]);
@@ -87,17 +81,10 @@ export function MainLayout({ user, library, onLogout }: Props) {
     [events, refreshRecs]
   );
 
-  const handleNavigate = useCallback((section: SectionId) => {
-    setActive(section);
+  const handleNavigate = useCallback((view: SectionId) => {
+    setActiveView(view);
     setSidebarOpen(false);
-    if (section === "search") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-    sectionRefs[section].current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const currentTrackId = player.current?.song.track_id ?? null;
@@ -119,7 +106,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
   return (
     <div className={shellClasses}>
       <Sidebar
-        active={active}
+        active={activeView}
         favoritesCount={favorites.length}
         recentCount={recent.length}
         open={sidebarOpen}
@@ -138,21 +125,24 @@ export function MainLayout({ user, library, onLogout }: Props) {
         />
 
         <main className="app-content">
-          <SearchSection
-            currentTrackId={currentTrackId}
-            isPlaying={player.isPlaying}
-            isFavorite={isFavorite}
-            onPlay={handlePlay}
-            onToggleFavorite={handleToggleFavorite}
-            onResults={handleSearchResults}
-            onSearch={handleSearchQuery}
-          />
+          {activeView === "search" && (
+            <SearchSection
+              currentTrackId={currentTrackId}
+              isPlaying={player.isPlaying}
+              isFavorite={isFavorite}
+              onPlay={handlePlay}
+              onToggleFavorite={handleToggleFavorite}
+              onResults={handleSearchResults}
+              onSearch={handleSearchQuery}
+            />
+          )}
 
-          <div className="sections">
-            <div className="section-anchor" ref={sectionRefs.recommendations}>
+          {activeView === "recommendations" && (
+            <div className="library-view">
               <MusicSection
                 title="Recomendações"
                 icon="✧"
+                variant="grid"
                 songs={recommendations}
                 emptyMessage={recommendationsEmpty}
                 currentTrackId={currentTrackId}
@@ -162,11 +152,14 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
+          )}
 
-            <div className="section-anchor" ref={sectionRefs.recent}>
+          {activeView === "recent" && (
+            <div className="library-view">
               <MusicSection
                 title="Últimas escutadas"
                 icon="↺"
+                variant="grid"
                 songs={recent}
                 emptyMessage="Você não escutou nenhuma música ainda."
                 currentTrackId={currentTrackId}
@@ -176,11 +169,14 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
+          )}
 
-            <div className="section-anchor" ref={sectionRefs.favorites}>
+          {activeView === "favorites" && (
+            <div className="library-view">
               <MusicSection
-                title="Minhas favoritas"
+                title="Favoritas"
                 icon="♥"
+                variant="grid"
                 songs={favorites}
                 emptyMessage="Você não favoritou nenhuma música ainda."
                 currentTrackId={currentTrackId}
@@ -190,7 +186,7 @@ export function MainLayout({ user, library, onLogout }: Props) {
                 onToggleFavorite={handleToggleFavorite}
               />
             </div>
-          </div>
+          )}
         </main>
       </div>
 

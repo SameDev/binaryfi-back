@@ -759,15 +759,8 @@ button {
   margin-top: 10px;
 }
 
-.sections {
-  display: flex;
-  flex-direction: column;
-  gap: 38px;
-  margin-top: 12px;
-}
-
-.section-anchor {
-  scroll-margin-top: 80px;
+.library-view {
+  padding-top: 8px;
 }
 
 .music-section {

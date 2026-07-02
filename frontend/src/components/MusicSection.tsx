@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Song } from "../types";
 import { EmptyState } from "./EmptyState";
 import { HorizontalMusicRow } from "./HorizontalMusicRow";
+import { MusicCard } from "./MusicCard";
 
 type Props = {
   title: string;
@@ -14,6 +15,7 @@ type Props = {
   onPlay: (song: Song) => void;
   onToggleFavorite: (song: Song) => void;
   action?: ReactNode;
+  variant?: "row" | "grid";
 };
 
 export function MusicSection({
@@ -27,6 +29,7 @@ export function MusicSection({
   onPlay,
   onToggleFavorite,
   action,
+  variant = "row",
 }: Props) {
   return (
     <section className="music-section">
@@ -39,6 +42,20 @@ export function MusicSection({
 
       {songs.length === 0 ? (
         <EmptyState message={emptyMessage} />
+      ) : variant === "grid" ? (
+        <div className="results-grid">
+          {songs.map((song) => (
+            <MusicCard
+              key={song.track_id}
+              song={song}
+              isFavorite={isFavorite(song.track_id)}
+              isCurrent={currentTrackId === song.track_id}
+              isPlaying={isPlaying}
+              onPlay={onPlay}
+              onToggleFavorite={onToggleFavorite}
+            />
+          ))}
+        </div>
       ) : (
         <HorizontalMusicRow
           songs={songs}
