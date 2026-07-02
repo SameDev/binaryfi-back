@@ -128,9 +128,7 @@ export class MetadataService {
     }
   }
 
-  private async fromDeezer(
-    song: Song,
-  ): Promise<Partial<TrackMetadata> | null> {
+  private async fromDeezer(song: Song): Promise<Partial<TrackMetadata> | null> {
     const artist = this.primaryArtist(song.artists);
     const q = `artist:"${artist}" track:"${song.track_name}"`;
     const url = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1`;
@@ -155,9 +153,7 @@ export class MetadataService {
     };
   }
 
-  private async fromItunes(
-    song: Song,
-  ): Promise<Partial<TrackMetadata> | null> {
+  private async fromItunes(song: Song): Promise<Partial<TrackMetadata> | null> {
     const artist = this.primaryArtist(song.artists);
     // Usa artista + música + álbum (não só artista + música).
     const term = `${artist} ${song.track_name} ${song.album_name}`.trim();

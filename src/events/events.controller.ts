@@ -22,7 +22,8 @@ export class EventsController {
   @Get()
   @ApiOperation({
     summary: 'Histórico de interações',
-    description: 'Retorna os eventos registrados de um usuário (debug/inspeção).',
+    description:
+      'Retorna os eventos registrados de um usuário (debug/inspeção).',
   })
   list(@Query('userId') userId: string) {
     return { userId, events: this.events.getEvents(userId ?? '') };

@@ -21,10 +21,16 @@ export class TrackMetadata {
   })
   coverUrl: string | null;
 
-  @ApiProperty({ example: 'https://cdn.deezer.com/preview.mp3', nullable: true })
+  @ApiProperty({
+    example: 'https://cdn.deezer.com/preview.mp3',
+    nullable: true,
+  })
   previewUrl: string | null;
 
-  @ApiProperty({ example: 'https://open.spotify.com/track/...', nullable: true })
+  @ApiProperty({
+    example: 'https://open.spotify.com/track/...',
+    nullable: true,
+  })
   externalUrl: string | null;
 
   @ApiProperty({

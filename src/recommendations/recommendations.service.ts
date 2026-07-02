@@ -24,11 +24,7 @@ export class RecommendationsService {
     private readonly events: EventsService,
   ) {}
 
-  recommend(
-    userId: string,
-    limit: number,
-    preferredGenres: string[],
-  ): Song[] {
+  recommend(userId: string, limit: number, preferredGenres: string[]): Song[] {
     const history = this.events.getEvents(userId);
 
     const played: Song[] = [];

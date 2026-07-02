@@ -1,4 +1,10 @@
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RecommendationsService } from './recommendations.service';
 
@@ -20,7 +26,8 @@ export class RecommendationsController {
     name: 'genres',
     required: false,
     example: 'pop,rock',
-    description: 'Gêneros preferidos escolhidos pelo usuário (separados por vírgula).',
+    description:
+      'Gêneros preferidos escolhidos pelo usuário (separados por vírgula).',
   })
   get(
     @Query('userId') userId = '',
@@ -32,7 +39,11 @@ export class RecommendationsController {
       .map((g) => g.trim())
       .filter(Boolean);
     const safeLimit = Math.min(Math.max(limit, 1), 100);
-    const results = this.recommendations.recommend(userId, safeLimit, preferred);
+    const results = this.recommendations.recommend(
+      userId,
+      safeLimit,
+      preferred,
+    );
     return { userId, count: results.length, results };
   }
 }
