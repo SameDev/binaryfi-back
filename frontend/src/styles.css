@@ -1604,3 +1604,118 @@ button {
     padding-bottom: 170px;
   }
 }
+
+/* ============================================================
+   Explicação didática da busca binária
+   ============================================================ */
+.steps-explain {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.steps-explain strong {
+  color: var(--text);
+}
+.steps-explain em {
+  color: var(--green-bright);
+  font-style: normal;
+}
+
+/* ============================================================
+   Mobile, touch e safe-area
+   ============================================================ */
+
+/* Em telas touch os botões que dependem de hover ficam sempre visíveis */
+@media (hover: none) {
+  .cover-play,
+  .card-fav {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Player fixo respeita a área inferior segura (notch / barra de gestos) */
+.audio-player {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 100dvh evita o bug do 100vh nos navegadores mobile */
+.auth-screen,
+.preferences-screen,
+.boot-screen {
+  min-height: 100dvh;
+}
+.sidebar {
+  height: 100dvh;
+}
+.now-playing {
+  height: 100dvh;
+}
+
+/* Tablet e abaixo */
+@media (max-width: 768px) {
+  /* Alvos de toque maiores */
+  .cover-play {
+    width: 46px;
+    height: 46px;
+    font-size: 16px;
+  }
+  .card-fav {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+  }
+  /* Tabela de passos rola horizontalmente em vez de espremer */
+  .steps-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .steps-row {
+    min-width: 460px;
+  }
+}
+
+/* Celular */
+@media (max-width: 560px) {
+  /* A busca não fica presa ao topo quando o teclado abre */
+  .search-sticky {
+    position: static;
+  }
+  .search-input,
+  .toggle-option,
+  .search-clear {
+    min-height: 44px;
+  }
+  /* Sobra espaço para o player fixo + safe area */
+  .app-shell.with-player .app-content {
+    padding-bottom: calc(180px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Celular pequeno */
+@media (max-width: 420px) {
+  .search-headline {
+    font-size: 24px;
+  }
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  /* Só os cards da grade de resultados ocupam a célula;
+     as fileiras horizontais mantêm largura fixa para rolar. */
+  .results-grid .music-card {
+    width: auto;
+  }
+  .app-content {
+    padding: 16px 12px 48px;
+  }
+  .player-youtube {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+}
