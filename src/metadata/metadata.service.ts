@@ -5,10 +5,18 @@ import { Song } from '../songs/song.interface';
 import { MemoryCache } from '../common/memory-cache';
 import { MetadataSource, TrackMetadata } from './track-metadata.interface';
 
-const POSITIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
-const NEGATIVE_TTL_MS = 15 * 60 * 1000; // 15 minutos
+const POSITIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000; 
+const PARTIAL_TTL_MS = 30 * 60 * 1000; 
+const NEGATIVE_TTL_MS = 15 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 4000;
 const BATCH_CONCURRENCY = 6;
+
+type ProviderResult = {
+  coverUrl: string | null;
+  previewUrl: string | null;
+  externalUrl?: string;
+  source: MetadataSource;
+};
 
 @Injectable()
 export class MetadataService {
@@ -60,35 +68,55 @@ export class MetadataService {
     const song = this.songs.getById(trackId);
     const base = this.baseMetadata(trackId, song);
 
-    // Ordem de prioridade: Spotify -> Deezer -> iTunes -> fallback.
-    const providers: Array<() => Promise<Partial<TrackMetadata> | null>> = [];
+   
+    const providers: Array<() => Promise<ProviderResult | null>> = [];
     if (this.spotifyEnabled) providers.push(() => this.fromSpotify(trackId));
     if (song) {
       providers.push(() => this.fromDeezer(song));
       providers.push(() => this.fromItunes(song));
     }
 
+    let coverUrl: string | null = null;
+    let coverSource: MetadataSource | null = null;
+    let previewUrl: string | null = null;
+    let externalUrl: string | null = base.externalUrl;
+
     for (const provider of providers) {
+      if (coverUrl && previewUrl) break; 
+
+      let found: ProviderResult | null = null;
       try {
-        const found = await provider();
-        if (found?.coverUrl) {
-          const result: TrackMetadata = { ...base, ...found };
-          if (!result.externalUrl) result.externalUrl = base.externalUrl;
-          this.cache.set(trackId, result, POSITIVE_TTL_MS);
-          return result;
-        }
-        if (found?.previewUrl && !base.previewUrl) {
-          base.previewUrl = found.previewUrl;
-          base.source = found.source ?? base.source;
-        }
+        found = await provider();
       } catch (err) {
         this.logger.debug(`Provider falhou para ${trackId}: ${String(err)}`);
       }
+      if (!found) continue;
+
+      if (!coverUrl && found.coverUrl) {
+        coverUrl = found.coverUrl;
+        coverSource = found.source;
+        if (found.externalUrl) externalUrl = found.externalUrl;
+      }
+      if (!previewUrl && found.previewUrl) {
+        previewUrl = found.previewUrl;
+      }
     }
 
-    const fallback: TrackMetadata = { ...base, source: 'fallback' };
-    this.cache.set(trackId, fallback, NEGATIVE_TTL_MS);
-    return fallback;
+    const result: TrackMetadata = {
+      ...base,
+      coverUrl,
+      previewUrl,
+      externalUrl,
+      source: coverSource ?? 'fallback',
+    };
+
+    const ttl = coverUrl
+      ? previewUrl
+        ? POSITIVE_TTL_MS
+        : PARTIAL_TTL_MS
+      : NEGATIVE_TTL_MS;
+    this.cache.set(trackId, result, ttl);
+    return result;
   }
 
   private baseMetadata(trackId: string, song?: Song): TrackMetadata {
@@ -123,7 +151,7 @@ export class MetadataService {
     }
   }
 
-  private async fromDeezer(song: Song): Promise<Partial<TrackMetadata> | null> {
+  private async fromDeezer(song: Song): Promise<ProviderResult | null> {
     const artist = this.primaryArtist(song.artists);
     const q = `artist:"${artist}" track:"${song.track_name}"`;
     const url = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1`;
@@ -137,18 +165,17 @@ export class MetadataService {
     }>(url);
 
     const hit = data.data?.[0];
-    const cover = hit?.album?.cover_xl || hit?.album?.cover_big;
-    if (!hit || !cover) return null;
+    if (!hit) return null;
 
     return {
-      coverUrl: cover,
+      coverUrl: hit.album?.cover_xl || hit.album?.cover_big || null,
       previewUrl: hit.preview || null,
       externalUrl: hit.link || undefined,
-      source: 'deezer' as MetadataSource,
+      source: 'deezer',
     };
   }
 
-  private async fromItunes(song: Song): Promise<Partial<TrackMetadata> | null> {
+  private async fromItunes(song: Song): Promise<ProviderResult | null> {
     const artist = this.primaryArtist(song.artists);
     const term = `${artist} ${song.track_name} ${song.album_name}`.trim();
     const url =
@@ -164,13 +191,15 @@ export class MetadataService {
     }>(url);
 
     const hit = data.results?.[0];
-    if (!hit?.artworkUrl100) return null;
+    if (!hit) return null;
 
     return {
-      coverUrl: hit.artworkUrl100.replace('100x100bb', '600x600bb'),
+      coverUrl: hit.artworkUrl100
+        ? hit.artworkUrl100.replace('100x100bb', '600x600bb')
+        : null,
       previewUrl: hit.previewUrl || null,
       externalUrl: hit.trackViewUrl || undefined,
-      source: 'itunes' as MetadataSource,
+      source: 'itunes',
     };
   }
 
@@ -203,9 +232,7 @@ export class MetadataService {
     return this.spotifyToken.value;
   }
 
-  private async fromSpotify(
-    trackId: string,
-  ): Promise<Partial<TrackMetadata> | null> {
+  private async fromSpotify(trackId: string): Promise<ProviderResult | null> {
     if (!/^[a-zA-Z0-9]{22}$/.test(trackId)) return null;
     const token = await this.getSpotifyToken();
     if (!token) return null;
@@ -218,14 +245,11 @@ export class MetadataService {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const cover = data.album?.images?.[0]?.url;
-    if (!cover) return null;
-
     return {
-      coverUrl: cover,
+      coverUrl: data.album?.images?.[0]?.url || null,
       previewUrl: data.preview_url || null,
       externalUrl: data.external_urls?.spotify || undefined,
-      source: 'spotify' as MetadataSource,
+      source: 'spotify',
     };
   }
 }

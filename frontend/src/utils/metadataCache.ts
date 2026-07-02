@@ -1,16 +1,18 @@
 import type { TrackMetadata } from "../types";
 
-const PREFIX = "binaryfi_metadata_";
-const POSITIVE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias
-const NEGATIVE_TTL = 10 * 60 * 1000; // 10 minutos
+const PREFIX = "binaryfi_metadata_v2_";
+const FULL_TTL = 7 * 24 * 60 * 60 * 1000; 
+const COVER_ONLY_TTL = 60 * 60 * 1000; 
+const NEGATIVE_TTL = 10 * 60 * 1000; 
 
 type CacheEntry = {
   value: TrackMetadata;
   storedAt: number;
 };
 
-function isPositive(metadata: TrackMetadata): boolean {
-  return Boolean(metadata.coverUrl) && metadata.source !== "fallback";
+function ttlFor(metadata: TrackMetadata): number {
+  if (!metadata.coverUrl) return NEGATIVE_TTL;
+  return metadata.previewUrl ? FULL_TTL : COVER_ONLY_TTL;
 }
 
 export function readMetadataCache(trackId: string): TrackMetadata | null {
@@ -20,8 +22,7 @@ export function readMetadataCache(trackId: string): TrackMetadata | null {
     const entry = JSON.parse(raw) as CacheEntry;
     if (!entry?.value) return null;
 
-    const ttl = isPositive(entry.value) ? POSITIVE_TTL : NEGATIVE_TTL;
-    if (Date.now() - entry.storedAt > ttl) return null;
+    if (Date.now() - entry.storedAt > ttlFor(entry.value)) return null;
 
     return entry.value;
   } catch {
