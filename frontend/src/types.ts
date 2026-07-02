@@ -67,11 +67,17 @@ export type User = {
   password: string;
 };
 
+export type MetadataSource = "spotify" | "deezer" | "itunes" | "fallback";
+
 export type TrackMetadata = {
-  previewUrl?: string;
-  artworkUrl?: string;
-  externalUrl?: string;
-  source: "itunes" | "spotify" | "none";
+  trackId: string;
+  title: string;
+  artist: string;
+  album: string;
+  coverUrl: string | null;
+  previewUrl: string | null;
+  externalUrl: string | null;
+  source: MetadataSource;
 };
 
 export type PlayerTrack = {

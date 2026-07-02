@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlayerTrack, Song } from "../types";
+import type { PlayerTrack, Song, TrackMetadata } from "../types";
 import { getTrackMetadata } from "../api/metadataApi";
 
 export type PlayerStatus = "idle" | "loading" | "ready" | "unavailable";
+
+function emptyMetadata(song: Song): TrackMetadata {
+  return {
+    trackId: song.track_id,
+    title: song.track_name,
+    artist: song.artists,
+    album: song.album_name,
+    coverUrl: null,
+    previewUrl: null,
+    externalUrl: null,
+    source: "fallback",
+  };
+}
 
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -50,7 +63,7 @@ export function useAudioPlayer() {
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
-    setCurrent({ song, metadata: { source: "none" } });
+    setCurrent({ song, metadata: emptyMetadata(song) });
 
     const metadata = await getTrackMetadata(song);
     if (requestId.current !== id) return;

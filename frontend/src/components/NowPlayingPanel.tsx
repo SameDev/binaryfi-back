@@ -1,5 +1,6 @@
 import type { Song, TrackMetadata } from "../types";
 import { formatDuration } from "../utils/formatDuration";
+import { externalLinkLabelOrNull } from "../utils/metadataLabels";
 import { coverGradient } from "./TrackCover";
 
 type Props = {
@@ -9,13 +10,8 @@ type Props = {
 };
 
 export function NowPlayingPanel({ song, metadata, onClose }: Props) {
-  const artwork = metadata.artworkUrl;
-  const externalLabel =
-    metadata.source === "spotify"
-      ? "Abrir no Spotify"
-      : metadata.source === "itunes"
-        ? "Abrir no iTunes"
-        : null;
+  const artwork = metadata.coverUrl;
+  const externalLabel = externalLinkLabelOrNull(metadata.source);
 
   return (
     <aside className="now-playing">

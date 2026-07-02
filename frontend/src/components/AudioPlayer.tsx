@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { PlayerTrack, YouTubeVideo } from "../types";
 import type { PlayerStatus } from "../hooks/useAudioPlayer";
 import { coverGradient } from "./TrackCover";
+import { externalLinkLabel } from "../utils/metadataLabels";
 import { YouTubePlayer } from "./YouTubePlayer";
 import {
   getYouTubeSearchUrl,
@@ -41,9 +42,8 @@ export function AudioPlayer({
   onClose,
 }: Props) {
   const { song, metadata } = current;
-  const artwork = metadata.artworkUrl;
-  const externalLabel =
-    metadata.source === "spotify" ? "Abrir no Spotify" : "Abrir no iTunes";
+  const artwork = metadata.coverUrl;
+  const externalLabel = externalLinkLabel(metadata.source);
 
   const [youtubeVideo, setYoutubeVideo] = useState<YouTubeVideo | null>(null);
   const [youtubeLoading, setYoutubeLoading] = useState(false);
@@ -146,6 +146,7 @@ export function AudioPlayer({
                 <span className="player-time">{formatSeconds(currentTime)}</span>
                 <input
                   type="range"
+                  aria-label="Progresso da música"
                   min={0}
                   max={duration || 0}
                   step={0.1}

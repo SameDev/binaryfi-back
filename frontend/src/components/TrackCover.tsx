@@ -20,7 +20,7 @@ export function TrackCover({ song, className }: Props) {
   const { metadata, loading } = useTrackMetadata(song);
   const [errored, setErrored] = useState(false);
 
-  const artwork = !errored ? metadata?.artworkUrl : undefined;
+  const artwork = !errored ? metadata?.coverUrl ?? undefined : undefined;
   const showImage = Boolean(artwork);
 
   return (
